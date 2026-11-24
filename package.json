@@ -1,1 +1,9 @@
-
+{
+  "name": "zad-push-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Stateless Web Push relay for WhatsApp Zad on Vercel + GitHub",
+  "dependencies": {
+    "web-push": "^4.0.0"
+  }
+}
