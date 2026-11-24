@@ -1,5 +1,23 @@
 const crypto = require('crypto');
-const webpush = require('web-push');
+
+let _cachedWebPush = null;
+async function getWebPush() {
+  if (_cachedWebPush) return _cachedWebPush;
+  let mod = null;
+  try {
+    mod = require('web-push');
+  } catch {
+    mod = await import('web-push');
+  }
+  const resolved = mod && typeof mod.setVapidDetails === 'function'
+    ? mod
+    : (mod && mod.default && typeof mod.default.setVapidDetails === 'function' ? mod.default : mod);
+  if (!resolved || typeof resolved.setVapidDetails !== 'function' || typeof resolved.sendNotification !== 'function') {
+    throw new Error('تعذر تحميل مكتبة web-push');
+  }
+  _cachedWebPush = resolved;
+  return _cachedWebPush;
+}
 
 function setCorsHeaders(req, res) {
   const origin = req.headers.origin || '*';
@@ -172,7 +190,9 @@ module.exports = async function handler(req, res) {
   const allowedUrgency = ['very-low', 'low', 'normal', 'high'];
   const urgency = allowedUrgency.includes(opts.urgency) ? opts.urgency : 'high';
 
+  let webpush;
   try {
+    webpush = await getWebPush();
     webpush.setVapidDetails(cfg.subject, cfg.publicKey, cfg.privateKey);
   } catch (err) {
     res.status(500).json({
